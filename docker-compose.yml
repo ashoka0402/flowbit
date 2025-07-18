@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - flowbit-network
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      GENERIC_TIMEZONE: Europe/Berlin
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - flowbit-network
+
+  flowbit-api:
+    build:
+      context: ./flowbit-api
+      dockerfile: Dockerfile
+    container_name: flowbit-api
+    ports:
+      - "5000:5000"
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/flowbit
+      JWT_SECRET: fYk7w@N6z2^r%qPa8M1#bX5!xUe
+      N8N_CALLBACK_SECRET: my_flowbit_secret
+      N8N_WEBHOOK_URL: https://1afb47639c52.ngrok-free.app/webhook-test/dabd52fb-edb6-4018-b176-f6919cc408b4
+      FRONTEND_URL: http://localhost:3000
+    depends_on:
+      - mongodb
+    volumes:
+      - ./flowbit-api:/app
+      - /app/node_modules
+    networks:
+      - flowbit-network
+
+  react-shell:
+    image: node:18-alpine
+    container_name: react-shell
+    working_dir: /app
+    command: sh -c "npm install && npm start"
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+    depends_on:
+      - flowbit-api
+    volumes:
+      - ./react-shell:/app
+      - /app/node_modules
+    networks:
+      - flowbit-network
+
+  support-tickets-app:
+    image: node:18-alpine
+    container_name: support-tickets-app
+    working_dir: /app
+    command: sh -c "npm install && npm start"
+    ports:
+      - "8081:8081"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+      - PORT=8081
+    depends_on:
+      - flowbit-api
+    volumes:
+      - ./support-tickets-app:/app
+      - /app/node_modules
+    networks:
+      - flowbit-network
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok
+    environment:
+      NGROK_AUTHTOKEN: 3024eboPOgP9veedRgjiIfkJcjb_4Y7y73Jr8hR9LC6P8FvTX
+    command:
+      - "http"
+      - "http://flowbit-api:5000"
+    ports:
+      - "4040:4040"
+    depends_on:
+      - flowbit-api
+    networks:
+      - flowbit-network
+
+volumes:
+  mongodb_data:
+  n8n_data:
+
+networks:
+  flowbit-network:
+    driver: bridge

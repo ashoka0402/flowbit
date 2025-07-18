@@ -1,0 +1,14 @@
+[
+    {
+      "tenantId": "LogisticsCo",
+      "screenName": "Support Tickets",
+      "screenUrl": "http://localhost:8081/remoteEntry.js",
+      "componentName": "SupportTicketsApp"
+    },
+    {
+      "tenantId": "RetailGmbH",
+      "screenName": "Support Tickets",
+      "screenUrl": "http://localhost:8082/remoteEntry.js",
+      "componentName": "SupportTicketsApp"
+    }
+  ]
